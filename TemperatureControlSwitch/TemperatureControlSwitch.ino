@@ -3,10 +3,11 @@
 
 const float DEFAULT_TEMP = 50;
 float MaxTemp = DEFAULT_TEMP;
+float MinTemp = DEFAULT_TEMP;
 const int Switch1 = 8;
 const int Switch2 = 9;
-const int addr = 10; //lets write at address 10
-
+const int Minaddr = 10; //lets write at address 10
+const int Maxaddr = 30; //lets write at address 10
 float currentTemp = 0;
 
 SoftwareSerial mySerial(3, 4); // RX, TX
@@ -33,7 +34,6 @@ const long interval = 2000;
 /////////////////////////////////
 
 void setup() {
-  
   pinMode(Switch1, OUTPUT);
   pinMode(Switch2, OUTPUT);
 
@@ -42,11 +42,10 @@ void setup() {
   mySerial.begin(9600);
   Serial.println("Started");
   mySerial.println("BT:Started");
-  MaxTemp = readFloat(addr);
-  Serial.print("Readed Max tempt: ");
-  Serial.println(MaxTemp);
-  mySerial.print("BT:Readed Max tempt: ");
-  mySerial.println(MaxTemp);
+
+  MinTemp = readFloat(Minaddr);
+  MaxTemp = readFloat(Maxaddr);
+  PrintMaxMinTemp();
   currentTemp = measureTemp();
   Serial.print("Current Tempt: ");
   Serial.println(currentTemp);
@@ -71,17 +70,32 @@ void loop() {
 
     aMessage[messageSize] = '\0';                     // set last character to a null
     // and then the message
-    float readed = String(aMessage).toFloat();
-
-    if (readed > 1) {
-      writeFloat(addr, readed);
+    String input = String(aMessage);
+    if (input.indexOf(",") < 2) {
+      Serial.println("Invalid string");
+      mySerial.println("BT:Invalid string");
+      return;
     }
 
-    MaxTemp = readFloat(addr);
-    Serial.print("New Max tempt: ");
-    Serial.println(MaxTemp);
-    mySerial.print("BT:New Max tempt: ");
-    mySerial.println(MaxTemp);
+    float mintemp;
+    float maxtemp;
+    for (int i = 0; i < input.length(); i++) {
+      if (input.substring(i, i + 1) == ",") {
+        mintemp = input.substring(0, i).toFloat();
+        maxtemp = input.substring(i + 1).toFloat();
+        break;
+      }
+    }
+
+    if (mintemp > 1) {
+      writeFloat(Minaddr, mintemp);
+    }
+    if (maxtemp > 1) {
+      writeFloat(Maxaddr, maxtemp);
+    }
+    MinTemp = readFloat(Minaddr);
+    MaxTemp = readFloat(Maxaddr);
+    PrintMaxMinTemp();
   } // if available
 
 
@@ -97,7 +111,8 @@ void loop() {
     mySerial.println(currentTemp);
     if (currentTemp > MaxTemp) {
       SwitchOff();
-    } else {
+    }
+    if (currentTemp < MinTemp) {
       SwitchOn();
     }
   }
@@ -172,3 +187,16 @@ float measureTemp() {
   Tc = T - 273.15;
   return Tc;
 }
+
+///////////////////////////////////Printing Max Min Temp//////////////////////////////////
+void PrintMaxMinTemp() {
+  Serial.print("Readed Min tempt: ");
+  Serial.println(MinTemp);
+  mySerial.print("BT:Readed Min tempt: ");
+  mySerial.println(MinTemp);
+  Serial.print("Readed Max tempt: ");
+  Serial.println(MaxTemp);
+  mySerial.print("BT:Readed Max tempt: ");
+  mySerial.println(MaxTemp);
+}
+
