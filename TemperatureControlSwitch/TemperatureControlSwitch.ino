@@ -23,6 +23,7 @@ int Vo;
 float R1 = 1000;
 float logR2, R2, T, Tc, Tf;
 float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+boolean isbatteryfull = false;
 
 
 //////////////////////////////Printing without delay variables//////////////////////
@@ -72,30 +73,44 @@ void loop() {
     // and then the message
     String input = String(aMessage);
     if (input.indexOf(",") < 2) {
-      Serial.println("Invalid string");
-      mySerial.println("BT:Invalid string");
-      return;
-    }
-
-    float mintemp;
-    float maxtemp;
-    for (int i = 0; i < input.length(); i++) {
-      if (input.substring(i, i + 1) == ",") {
-        mintemp = input.substring(0, i).toFloat();
-        maxtemp = input.substring(i + 1).toFloat();
-        break;
+      if (input.indexOf("_full_") > 0)
+      {
+        isbatteryfull = true;
+        Serial.println("Battery FULL");
+        mySerial.println("Battery FULL");
+        SwitchOff();//turn off the switch as battery is low...
+      } else if (input.indexOf("_low_") > 0)
+      {
+        isbatteryfull = false;
+         SwitchOn();//turn on the switch as battery is low...
+        Serial.println("Battery LOW");
+        mySerial.println("Battery LOW");
+      }else{
+        invalidStr();
+        }
+    } else {
+      float mintemp;
+      float maxtemp;
+      for (int i = 0; i < input.length(); i++) {
+        if (input.substring(i, i + 1) == ",") {
+          mintemp = input.substring(0, i).toFloat();
+          maxtemp = input.substring(i + 1).toFloat();
+          break;
+        }
       }
+
+
+      if (mintemp > 1) {
+        writeFloat(Minaddr, mintemp);
+      }
+      if (maxtemp > 1) {
+        writeFloat(Maxaddr, maxtemp);
+      }
+      MinTemp = readFloat(Minaddr);
+      MaxTemp = readFloat(Maxaddr);
+      PrintMaxMinTemp();
     }
 
-    if (mintemp > 1) {
-      writeFloat(Minaddr, mintemp);
-    }
-    if (maxtemp > 1) {
-      writeFloat(Maxaddr, maxtemp);
-    }
-    MinTemp = readFloat(Minaddr);
-    MaxTemp = readFloat(Maxaddr);
-    PrintMaxMinTemp();
   } // if available
 
 
@@ -109,11 +124,21 @@ void loop() {
     Serial.println(currentTemp);
     mySerial.print("BT:Current Tempt: ");
     mySerial.println(currentTemp);
-    if (currentTemp > MaxTemp) {
+
+    if (!isbatteryfull) {
+      PrintMaxMinTemp();
+      Serial.println("Battery not full");
+      mySerial.println("Battery not full");
+      if (currentTemp > MaxTemp) {
+        SwitchOff();
+      }
+      if (currentTemp < MinTemp) {
+        SwitchOn();
+      }
+    } else {
+      Serial.println("Battery full");
+      mySerial.println("Battery full");
       SwitchOff();
-    }
-    if (currentTemp < MinTemp) {
-      SwitchOn();
     }
   }
 
@@ -151,8 +176,12 @@ float readFloat(char add)
       break;
     }
   }
+  Serial.print("Data:");
+  Serial.println(data);
   data[len] = '\0';
-  float mdata = String(data).toFloat();
+  float mdata = atof(data);
+  Serial.print("Float Data:");
+  Serial.println(mdata);
   if (mdata < 1) {
     mdata = DEFAULT_TEMP;
   }
@@ -165,7 +194,7 @@ void SwitchOff() {
   digitalWrite(Switch1, HIGH);
   digitalWrite(Switch2, LOW);
   Serial.println("Turn off");
-  mySerial.print("BT:Turn off");
+  mySerial.println("BT:Turn off");
 }
 
 
@@ -200,3 +229,7 @@ void PrintMaxMinTemp() {
   mySerial.println(MaxTemp);
 }
 
+void invalidStr(){
+      Serial.println("Invalid str");
+      mySerial.println("BT:Invalid str");
+}
