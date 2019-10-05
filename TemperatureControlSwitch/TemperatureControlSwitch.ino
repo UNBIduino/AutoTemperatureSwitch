@@ -73,21 +73,24 @@ void loop() {
     // and then the message
     String input = String(aMessage);
     if (input.indexOf(",") < 2) {
-      if (input.indexOf("_full_") > 0)
+      if (input.indexOf("_full_") > -1)
       {
         isbatteryfull = true;
         Serial.println("Battery FULL");
         mySerial.println("Battery FULL");
         SwitchOff();//turn off the switch as battery is low...
-      } else if (input.indexOf("_low_") > 0)
+      } else if (input.indexOf("_low_") > -1)
       {
         isbatteryfull = false;
-         SwitchOn();//turn on the switch as battery is low...
+        SwitchOn();//turn on the switch as battery is low...
         Serial.println("Battery LOW");
         mySerial.println("Battery LOW");
-      }else{
-        invalidStr();
-        }
+      } else {
+        Serial.print("Invalid str");
+        Serial.println(input);
+        mySerial.print("BT:Invalid str");
+        mySerial.println("BT:Invalid str");
+      }
     } else {
       float mintemp;
       float maxtemp;
@@ -229,7 +232,3 @@ void PrintMaxMinTemp() {
   mySerial.println(MaxTemp);
 }
 
-void invalidStr(){
-      Serial.println("Invalid str");
-      mySerial.println("BT:Invalid str");
-}
