@@ -89,7 +89,7 @@ void loop() {
         Serial.print("Invalid str");
         Serial.println(input);
         mySerial.print("BT:Invalid str");
-        mySerial.println("BT:Invalid str");
+        mySerial.println(input);
       }
     } else {
       float mintemp;
