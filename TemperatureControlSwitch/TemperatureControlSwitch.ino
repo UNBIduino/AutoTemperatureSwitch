@@ -41,17 +41,13 @@ void setup() {
   SwitchOff();//TurnOff the switch
   Serial.begin(9600);
   mySerial.begin(9600);
-  Serial.println("Started");
-  mySerial.println("BT:Started");
+  MyPrint("Started");
 
   MinTemp = readFloat(Minaddr);
   MaxTemp = readFloat(Maxaddr);
   PrintMaxMinTemp();
   currentTemp = measureTemp();
-  Serial.print("Current Tempt: ");
-  Serial.println(currentTemp);
-  mySerial.print("BT:Current Tempt: ");
-  mySerial.println(currentTemp);
+  MyTagPrintFloat("Current Tempt: ", currentTemp);
 
 }
 
@@ -76,20 +72,19 @@ void loop() {
       if (input.indexOf("_full_") > -1)
       {
         isbatteryfull = true;
-        Serial.println("Battery FULL");
-        mySerial.println("Battery FULL");
+        MyPrint("BT:Battery FULL");
         SwitchOff();//turn off the switch as battery is low...
       } else if (input.indexOf("_low_") > -1)
       {
         isbatteryfull = false;
-        SwitchOn();//turn on the switch as battery is low...
-        Serial.println("Battery LOW");
-        mySerial.println("Battery LOW");
+        if (currentTemp > MaxTemp) {
+          SwitchOff();
+          MyPrint("Battery LOW, but Temp is high");
+        } else {
+          SwitchOn();
+        }
       } else {
-        Serial.print("Invalid str");
-        Serial.println(input);
-        mySerial.print("BT:Invalid str");
-        mySerial.println(input);
+        MyPrintWithmsg("BT:Invalid str", aMessage);
       }
     } else {
       float mintemp;
@@ -101,8 +96,6 @@ void loop() {
           break;
         }
       }
-
-
       if (mintemp > 1) {
         writeFloat(Minaddr, mintemp);
       }
@@ -121,17 +114,11 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-
     currentTemp = measureTemp();
-    Serial.print("Current Tempt: ");
-    Serial.println(currentTemp);
-    mySerial.print("BT:Current Tempt: ");
-    mySerial.println(currentTemp);
-
+    MyTagPrintFloat("Current Tempt: ", currentTemp);
     if (!isbatteryfull) {
       PrintMaxMinTemp();
-      Serial.println("Battery not full");
-      mySerial.println("Battery not full");
+      MyPrint("Battery not full");
       if (currentTemp > MaxTemp) {
         SwitchOff();
       }
@@ -139,8 +126,7 @@ void loop() {
         SwitchOn();
       }
     } else {
-      Serial.println("Battery full");
-      mySerial.println("Battery full");
+      MyPrint("Battery full");
       SwitchOff();
     }
   }
@@ -179,12 +165,11 @@ float readFloat(char add)
       break;
     }
   }
-  Serial.print("Data:");
-  Serial.println(data);
   data[len] = '\0';
+  MyPrintWithmsg("Data:", data);
   float mdata = atof(data);
-  Serial.print("Float Data:");
-  Serial.println(mdata);
+  MyTagPrintFloat("Float Data:", mdata);
+
   if (mdata < 1) {
     mdata = DEFAULT_TEMP;
   }
@@ -196,16 +181,13 @@ float readFloat(char add)
 void SwitchOff() {
   digitalWrite(Switch1, HIGH);
   digitalWrite(Switch2, LOW);
-  Serial.println("Turn off");
-  mySerial.println("BT:Turn off");
+  MyPrint("BT:Turn off");
 }
-
 
 void SwitchOn() {
   digitalWrite(Switch1, LOW);
   digitalWrite(Switch2, HIGH);
-  Serial.println("Turn on");
-  mySerial.println("BT:Turn on");
+  MyPrint("Turn on");
 }
 
 ///////////////////////////MEASURUING_TEMP/////////////////////////////////////////
@@ -222,13 +204,36 @@ float measureTemp() {
 
 ///////////////////////////////////Printing Max Min Temp//////////////////////////////////
 void PrintMaxMinTemp() {
-  Serial.print("Readed Min tempt: ");
-  Serial.println(MinTemp);
-  mySerial.print("BT:Readed Min tempt: ");
-  mySerial.println(MinTemp);
-  Serial.print("Readed Max tempt: ");
-  Serial.println(MaxTemp);
-  mySerial.print("BT:Readed Max tempt: ");
-  mySerial.println(MaxTemp);
+  MyTagPrintFloat("Readed Min tempt: ", MinTemp);
+  MyTagPrintFloat("Readed Max tempt: ", MaxTemp);
+  Serial.println();
+  mySerial.println();
 }
 
+void MyTagPrint(char* tag, int num) {
+  Serial.print(tag);
+  Serial.println(num);
+  mySerial.print("BT:");
+  mySerial.print(tag);
+  mySerial.println(num);
+}
+void MyTagPrintFloat(char* tag, float num) {
+  Serial.print(tag);
+  Serial.println(num);
+  mySerial.print("BT:");
+  mySerial.print(tag);
+  mySerial.println(num);
+}
+
+void MyPrint(char* tag) {
+  Serial.println(tag);
+  mySerial.print("BT:");
+  mySerial.println(tag);
+}
+void MyPrintWithmsg(char* tag, char* msg) {
+  Serial.print(tag);
+  Serial.println(msg);
+  mySerial.print("BT:");
+  mySerial.print(tag);
+  mySerial.println(msg);
+}
