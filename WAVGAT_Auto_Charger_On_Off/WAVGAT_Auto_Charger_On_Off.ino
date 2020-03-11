@@ -34,8 +34,8 @@ void setup()
   // Open serial communications and wait for port to open:
   // set the data rate for the SoftwareSerial port
   mySerial.begin(9600);
-  mySerial.println("Hello, world?");
-  pinMode(13, OUTPUT);
+  pinMode(Switch1, OUTPUT);
+  pinMode(Switch2, OUTPUT);
   readFloat(addr);//lets read and set from EEPROM data
 }
 
