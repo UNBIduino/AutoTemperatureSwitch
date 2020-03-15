@@ -22,12 +22,15 @@ int Vo;
 float R1 = 1000;
 float logR2, R2, T, Tc, Tf;
 float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
-float current_temp = 0;
 
 /////////for print without delay///////////////
 unsigned long printable_milli = 0;
 
 ///////////////////////////////////////////////
+
+float sum_sensor = 0;
+float cur_tem = 0;
+unsigned int counter = 0;
 
 void setup()
 {
@@ -41,7 +44,11 @@ void setup()
 
 void loop() // run over and over
 {
-  current_temp = measureTemp();//Lets measure the current tempt
+
+  sum_sensor = sum_sensor + measureTemp(); //Lets measure the current tempt
+  counter++;
+
+  /////////////////////////////////
   if (mySerial.available()) {
     String input = mySerial.readString();
     mySerial.println("Recieved: ");
@@ -102,16 +109,16 @@ void loop() // run over and over
   //  }
 
   unsigned long cur_milli = millis();
-  if (cur_milli - printable_milli > 1000) {
-
+  if (cur_milli - printable_milli > 3500) {
+    cur_tem = sum_sensor / counter;
     /////////////////////////////////////////////////////////////////
     if (isbatteryfull) {
       switch_state = false;
     } else {
-      if (current_temp < minTempVal) {
+      if (cur_tem < minTempVal) {
         switch_state = true;
       }
-      if (current_temp > maxTempVal) {
+      if (cur_tem > maxTempVal) {
         switch_state = false;
       }
     }
@@ -129,8 +136,10 @@ void loop() // run over and over
     mySerial.println(minTempVal);
     mySerial.print("Max Temp:");
     mySerial.println(maxTempVal);
+    mySerial.print("Measured count:");
+    mySerial.println(counter);
     mySerial.print("Current Temp:");
-    mySerial.println(current_temp);
+    mySerial.println(cur_tem);
     mySerial.print("Batter Status:");
     if (isbatteryfull) {
       mySerial.println("Full");
@@ -143,6 +152,9 @@ void loop() // run over and over
       MyPrint("Turn off");
     }
     mySerial.println();
+    //////reset the counter variables/////
+    counter = 0;
+    sum_sensor = 0;
   }
 }
 ///////////////////////UTILITY///////////////////////
